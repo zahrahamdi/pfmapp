@@ -1,0 +1,12 @@
+node_modules/
+backend/node_modules/
+backend/database/finance.db
+backend/database/*.db-journal
+.env
+.env.*
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
