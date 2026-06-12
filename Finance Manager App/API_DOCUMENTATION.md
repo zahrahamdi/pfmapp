@@ -1,80 +1,118 @@
 # API Documentation — Personal Finance Manager
 
-> Backend source code is in the `backend/` folder. Run the server with `cd backend && npm start`.
+> کد بک‌اند در پوشه `backend/` است. اجرا: `cd backend && npm start`
 
-Base URL: `http://localhost:3465`
+**Base URL:** `http://localhost:3465`
 
-Swagger UI: `http://localhost:3465/api-docs`
+**Swagger UI:** `http://localhost:3465/api-docs`
 
 > پورت پیش‌فرض: `3465` (در `backend/.env`). اگر اشغال باشد، سرور اولین پورت آزاد بعدی را انتخاب می‌کند — پورت واقعی را در خروجی ترمینال ببینید.
 
 ---
 
-## سؤالات اصلی کاربر
+## فهرست
 
-| سؤال | Endpoint | فیلد پاسخ |
-|------|----------|-----------|
-| چقدر درآمد داشتم؟ | `GET /api/dashboard/balance` | `data.totalIncome` |
-| چقدر خرج کردم؟ | `GET /api/dashboard/balance` | `data.totalExpense` |
-| الان چقدر پول دارم؟ | `GET /api/dashboard/balance` | `data.balance` |
-| بیشترین خرجم کجا بوده؟ | `GET /api/dashboard/report` | `data.topCategory` |
-| از بودجه رد شدم یا نه؟ | `GET /api/budgets/status` | `data.budgets[].status` |
-| این ماه چقدر پس‌انداز کردم؟ | `GET /api/dashboard/monthly-report` | `data.monthlyBalance` |
-
-**خلاصه یک‌جا:** `GET /api/dashboard`
+1. [احراز هویت (Auth)](#احراز-هویت-auth)
+2. [حساب‌ها (Accounts)](#حساب‌ها-accounts)
+3. [دسته‌بندی‌ها (Categories)](#دسته‌بندی‌ها-categories)
+4. [تراکنش‌ها (Transactions)](#تراکنش‌ها-transactions)
+5. [بودجه (Budgets)](#بودجه-budgets)
+6. [داشبورد (Dashboard)](#داشبورد-dashboard)
+7. [گزارش‌ها (Reports)](#گزارش‌ها-reports)
+8. [پیش‌بینی (Forecast)](#پیش‌بینی-forecast)
+9. [APIهای Legacy (بدون auth)](#apiهای-legacy-بدون-auth)
+10. [فرمت پاسخ و خطاها](#فرمت-پاسخ-و-خطاها)
 
 ---
 
-## Response Format
+## نمادها
 
-### Success
+| نماد | معنی |
+|------|------|
+| 🔓 | بدون توکن |
+| 🔒 | نیاز به `Authorization: Bearer <token>` |
+
+**Header برای endpointهای 🔒:**
+
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+---
+
+## سؤالات اصلی کاربر
+
+| سؤال | Endpoint (با auth) | فیلد پاسخ |
+|------|-------------------|-----------|
+| چقدر درآمد داشتم؟ | `GET /api/dashboard/summary` | `data.monthly_income` |
+| چقدر خرج کردم؟ | `GET /api/dashboard/summary` | `data.monthly_expense` |
+| الان چقدر پول دارم؟ | `GET /api/dashboard/summary` | `data.total_balance` |
+| بیشترین خرجم کجا بوده؟ | `GET /api/dashboard/category-breakdown` | `data.category_breakdown.expense[0]` |
+| از بودجه رد شدم یا نه؟ | `GET /api/budgets/summary` | `data.budgets[].status` |
+| این ماه چقدر پس‌انداز کردم؟ | `GET /api/dashboard/summary` | `data.monthly_saving` |
+| ماه آینده چقدر خرج می‌کنم؟ | `GET /api/forecast/next-month` | `data.predicted_expense` |
+
+---
+
+## احراز هویت (Auth)
+
+### `POST /api/auth/register` 🔓
+
+ثبت‌نام کاربر جدید. دسته‌بندی‌های پیش‌فرض به‌صورت خودکار seed می‌شوند.
+
+**Body:**
+
+```json
+{
+  "name": "زینا",
+  "email": "zeina@example.com",
+  "password": "secret123"
+}
+```
+
+**Validation:** نام ≥ ۲ کاراکتر · ایمیل معتبر · رمز ≥ ۶ کاراکتر
+
+**Response 201:**
 
 ```json
 {
   "success": true,
-  "data": {}
+  "data": {
+    "user": {
+      "id": 1,
+      "name": "زینا",
+      "email": "zeina@example.com",
+      "created_at": "2026-06-01 10:00:00",
+      "updated_at": "2026-06-01 10:00:00"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIs..."
+  }
 }
 ```
 
-### Error
-
-```json
-{
-  "success": false,
-  "message": "Error description"
-}
-```
-
-### Validation Error (HTTP 400)
-
-```json
-{
-  "success": false,
-  "message": "Validation failed",
-  "errors": [
-    "Title is required",
-    "Amount must be greater than 0"
-  ]
-}
-```
+**خطاها:** `409` ایمیل تکراری · `400` اعتبارسنجی · `429` تلاش بیش از حد
 
 ---
 
-## Categories
+### `POST /api/auth/login` 🔓
 
-### Expense Categories (هزینه‌ها)
+**Body:**
 
-`غذا` · `حمل‌ونقل` · `قبض` · `تفریح` · `خرید` · `سلامت` · `آموزش` · `سفر` · `سایر`
+```json
+{
+  "email": "zeina@example.com",
+  "password": "secret123"
+}
+```
 
-### Income Categories (درآمدها)
+**Response 200:** همان ساختار register (`user` + `token`)
 
-`حقوق` · `فریلنس` · `هدیه` · `پاداش` · `سرمایه‌گذاری` · `سایر`
+**خطاها:** `401` ایمیل یا رمز نامعتبر
 
 ---
 
-## Health Check
-
-### `GET /`
+### `GET /api/auth/me` 🔒
 
 **Response 200:**
 
@@ -82,20 +120,460 @@ Swagger UI: `http://localhost:3465/api-docs`
 {
   "success": true,
   "data": {
-    "message": "Finance Manager API is running"
+    "id": 1,
+    "name": "زینا",
+    "email": "zeina@example.com",
+    "created_at": "2026-06-01 10:00:00",
+    "updated_at": "2026-06-01 10:00:00"
   }
 }
 ```
 
 ---
 
-## Incomes
+## حساب‌ها (Accounts)
 
-### `POST /api/incomes`
+همه endpointها 🔒
 
-Create a new income record.
+| Method | Endpoint | توضیح |
+|--------|----------|-------|
+| GET | `/api/accounts` | لیست حساب‌ها |
+| POST | `/api/accounts` | ایجاد حساب |
+| GET | `/api/accounts/:id` | جزئیات حساب |
+| PUT | `/api/accounts/:id` | ویرایش حساب |
+| DELETE | `/api/accounts/:id` | حذف (soft delete اگر تراکنش داشته باشد) |
 
-**Request body:**
+**نوع حساب (`type`):** `cash` · `bank` · `wallet` · `savings` · `credit` · `other`
+
+### `POST /api/accounts`
+
+```json
+{
+  "name": "کیف پول اصلی",
+  "type": "wallet",
+  "initial_balance": 1000000,
+  "currency": "IRR"
+}
+```
+
+`currency` اختیاری — پیش‌فرض `IRR`
+
+**Response 201:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "user_id": 1,
+    "name": "کیف پول اصلی",
+    "type": "wallet",
+    "initial_balance": 1000000,
+    "current_balance": 1000000,
+    "currency": "IRR",
+    "created_at": "2026-06-01 10:00:00",
+    "updated_at": "2026-06-01 10:00:00"
+  }
+}
+```
+
+### `PUT /api/accounts/:id`
+
+```json
+{
+  "name": "کیف پول به‌روز",
+  "type": "bank",
+  "currency": "IRR"
+}
+```
+
+---
+
+## دسته‌بندی‌ها (Categories)
+
+همه endpointها 🔒
+
+| Method | Endpoint | توضیح |
+|--------|----------|-------|
+| GET | `/api/categories` | لیست — فیلتر: `?type=income` یا `?type=expense` |
+| POST | `/api/categories` | ایجاد |
+| GET | `/api/categories/:id` | جزئیات |
+| PUT | `/api/categories/:id` | ویرایش |
+| DELETE | `/api/categories/:id` | حذف (فقط اگر تراکنش نداشته باشد) |
+
+**نوع (`type`):** `income` · `expense`
+
+### دسته‌بندی‌های پیش‌فرض (هنگام register)
+
+**هزینه:** خوراک · حمل‌ونقل · اجاره · درمان · تفریح · خرید
+
+**درآمد:** حقوق · فریلنس · سرمایه‌گذاری
+
+### `POST /api/categories`
+
+```json
+{
+  "name": "سرگرمی",
+  "type": "expense",
+  "icon": "fun",
+  "color": "#FF5733"
+}
+```
+
+`icon` و `color` اختیاری
+
+---
+
+## تراکنش‌ها (Transactions)
+
+همه endpointها 🔒
+
+| Method | Endpoint | توضیح |
+|--------|----------|-------|
+| GET | `/api/transactions` | لیست با فیلتر |
+| POST | `/api/transactions` | ایجاد |
+| GET | `/api/transactions/:id` | جزئیات |
+| PUT | `/api/transactions/:id` | ویرایش |
+| DELETE | `/api/transactions/:id` | حذف |
+
+**نوع (`type`):** `income` · `expense` · `transfer`
+
+**روش پرداخت (`payment_method`):** `cash` · `card` · `transfer` · `online` · `other`
+
+### فیلترهای `GET /api/transactions`
+
+| پارامتر | توضیح |
+|---------|-------|
+| `from` | تاریخ شروع `YYYY-MM-DD` |
+| `to` | تاریخ پایان |
+| `type` | `income` / `expense` / `transfer` |
+| `category_id` | شناسه دسته‌بندی |
+| `account_id` | شناسه حساب |
+| `min_amount` | حداقل مبلغ |
+| `max_amount` | حداکثر مبلغ |
+| `search` | جستجو در note و tags |
+
+### `POST /api/transactions` — درآمد یا هزینه
+
+```json
+{
+  "type": "expense",
+  "amount": 500000,
+  "date": "2026-06-05",
+  "account_id": 1,
+  "category_id": 3,
+  "note": "خرید مواد غذایی",
+  "payment_method": "card",
+  "tags": ["خوراک", "سوپرمارکت"]
+}
+```
+
+### `POST /api/transactions` — انتقال
+
+```json
+{
+  "type": "transfer",
+  "amount": 200000,
+  "date": "2026-06-05",
+  "account_id": 1,
+  "target_account_id": 2,
+  "note": "انتقال به بانک"
+}
+```
+
+> برای `transfer` نیازی به `category_id` نیست. `account_id` = مبدا، `target_account_id` = مقصد.
+
+**Response 201:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "user_id": 1,
+    "account_id": 1,
+    "category_id": 3,
+    "type": "expense",
+    "amount": 500000,
+    "date": "2026-06-05",
+    "note": "خرید مواد غذایی",
+    "tags": ["خوراک", "سوپرمارکت"],
+    "payment_method": "card",
+    "target_account_id": null,
+    "created_at": "2026-06-05 12:00:00",
+    "updated_at": "2026-06-05 12:00:00"
+  }
+}
+```
+
+---
+
+## بودجه (Budgets)
+
+### بودجه کاربر (با Bearer Token) 🔒
+
+| Method | Endpoint | توضیح |
+|--------|----------|-------|
+| GET | `/api/budgets` | لیست — فیلتر: `?month=6&year=2026` |
+| POST | `/api/budgets` | ایجاد |
+| GET | `/api/budgets/:id` | جزئیات |
+| PUT | `/api/budgets/:id` | ویرایش |
+| DELETE | `/api/budgets/:id` | حذف |
+| GET | `/api/budgets/summary` | وضعیت بودجه ماه — `?month=6&year=2026` |
+
+### `POST /api/budgets` (با token)
+
+```json
+{
+  "category_id": 3,
+  "amount": 3000000,
+  "month": 6,
+  "year": 2026
+}
+```
+
+`category_id` باید دسته‌بندی **هزینه** معتبر باشد.
+
+### `GET /api/budgets/summary` 🔒
+
+**Query:** `month` و `year` (اختیاری — پیش‌فرض ماه جاری)
+
+**Response 200:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "period": { "month": 6, "year": 2026, "startDate": "2026-06-01", "endDate": "2026-06-30" },
+    "budgets": [
+      {
+        "budget_id": 1,
+        "category_id": 3,
+        "category_name": "خوراک",
+        "budget_amount": 3000000,
+        "spent_amount": 2500000,
+        "remaining_amount": 500000,
+        "used_percent": 83.33,
+        "status": "هشدار"
+      }
+    ]
+  }
+}
+```
+
+**وضعیت بودجه (`status`):** `ایمن` · `هشدار` · `عبور از بودجه`
+
+| وضعیت | شرط |
+|-------|------|
+| `ایمن` | مصرف کمتر از ۸۰٪ |
+| `هشدار` | مصرف بین ۸۰٪ تا ۱۰۰٪ |
+| `عبور از بودجه` | مصرف بیشتر از سقف |
+
+### بودجه Legacy (بدون token) 🔓
+
+اگر **بدون** Bearer Token به `POST/GET/PUT/DELETE /api/budgets` بزنید، API قدیمی با `category` + `limit_amount` کار می‌کند.
+
+```json
+{
+  "category": "غذا",
+  "limit_amount": 3000000
+}
+```
+
+`GET /api/budgets/status` 🔓 — وضعیت بودجه legacy (ماه جاری، بدون auth)
+
+---
+
+## داشبورد (Dashboard)
+
+### با Bearer Token 🔒
+
+| Method | Endpoint | توضیح |
+|--------|----------|-------|
+| GET | `/api/dashboard/summary` | خلاصه کامل داشبورد |
+| GET | `/api/dashboard/monthly-report` | گزارش ماهانه |
+| GET | `/api/dashboard/category-breakdown` | تفکیک دسته‌بندی |
+
+**Query مشترک:** `month` و `year` (اختیاری — پیش‌فرض ماه جاری)
+
+### `GET /api/dashboard/summary` 🔒
+
+**Response 200:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "total_balance": 8500000,
+    "monthly_income": 15000000,
+    "monthly_expense": 5000000,
+    "monthly_saving": 10000000,
+    "saving_rate": 66.67,
+    "biggest_expense_category": "خوراک",
+    "recent_transactions": [],
+    "daily_expense_chart": [{ "date": "2026-06-01", "amount": 500000 }],
+    "income_vs_expense": { "income": 15000000, "expense": 5000000 },
+    "period": { "month": 6, "year": 2026, "startDate": "2026-06-01", "endDate": "2026-06-30" }
+  }
+}
+```
+
+### `GET /api/dashboard/category-breakdown` 🔒
+
+```json
+{
+  "success": true,
+  "data": {
+    "period": { "month": 6, "year": 2026, "startDate": "2026-06-01", "endDate": "2026-06-30" },
+    "category_breakdown": {
+      "expense": [
+        { "category_id": 1, "name": "خوراک", "color": "#FF6B6B", "icon": "food", "amount": 2000000, "percent": 40 }
+      ],
+      "income": [
+        { "category_id": 7, "name": "حقوق", "color": "#2ECC71", "icon": "salary", "amount": 15000000, "percent": 100 }
+      ]
+    }
+  }
+}
+```
+
+### Legacy (بدون token) 🔓
+
+| Endpoint | توضیح |
+|----------|-------|
+| `GET /api/dashboard` | خلاصه legacy |
+| `GET /api/dashboard/balance` | موجودی |
+| `GET /api/dashboard/report` | گزارش هزینه |
+| `GET /api/dashboard/monthly-report` | با token → گزارش کاربر؛ بدون token → legacy |
+
+---
+
+## گزارش‌ها (Reports)
+
+همه endpointها 🔒 — پارامتر `from` و `to` الزامی (`YYYY-MM-DD`)
+
+| Method | Endpoint | توضیح |
+|--------|----------|-------|
+| GET | `/api/reports/overview` | خلاصه دوره |
+| GET | `/api/reports/cashflow` | جریان نقدی روزانه و ماهانه |
+| GET | `/api/reports/categories` | تفکیک دسته‌بندی |
+| GET | `/api/reports/accounts` | گزارش حساب‌ها |
+
+**مثال:** `GET /api/reports/overview?from=2026-06-01&to=2026-06-30`
+
+### `GET /api/reports/overview`
+
+```json
+{
+  "success": true,
+  "data": {
+    "period": { "from": "2026-06-01", "to": "2026-06-30" },
+    "income": { "total": 15000000, "count": 2 },
+    "expense": { "total": 5000000, "count": 15 },
+    "transfer": { "total": 200000, "count": 1 },
+    "net_cashflow": 10000000,
+    "saving_rate": 66.67
+  }
+}
+```
+
+### `GET /api/reports/cashflow`
+
+```json
+{
+  "success": true,
+  "data": {
+    "period": { "from": "2026-06-01", "to": "2026-06-30" },
+    "daily": [{ "date": "2026-06-01", "income": 0, "expense": 500000, "net": -500000 }],
+    "monthly": [{ "month": "2026-06", "income": 15000000, "expense": 5000000, "net": 10000000 }]
+  }
+}
+```
+
+---
+
+## پیش‌بینی (Forecast)
+
+همه endpointها 🔒 — بر اساس حداکثر ۳ ماه گذشته تراکنش‌های کاربر
+
+| Method | Endpoint | توضیح |
+|--------|----------|-------|
+| GET | `/api/forecast/next-month` | پیش‌بینی کامل ماه آینده |
+| GET | `/api/forecast/cashflow` | ۳ ماه واقعی + ۱ ماه پیش‌بینی |
+| GET | `/api/forecast/categories` | پیش‌بینی هزینه هر دسته |
+
+اگر داده کافی نباشد:
+
+```json
+{
+  "success": false,
+  "message": "داده تراکنش کافی برای تولید پیش‌بینی وجود ندارد",
+  "errors": []
+}
+```
+
+### `GET /api/forecast/next-month`
+
+```json
+{
+  "success": true,
+  "data": {
+    "predicted_income": 15000000,
+    "predicted_expense": 6200000,
+    "predicted_saving": 8800000,
+    "predicted_saving_rate": 58.67,
+    "expected_balance_change": 8800000,
+    "confidence_level": "متوسط",
+    "target_month": "2026-07",
+    "months_analyzed": 3,
+    "months_with_data": 3,
+    "trend_summary": {
+      "income_trend": "پایدار",
+      "expense_trend": "افزایشی",
+      "saving_trend": "کاهشی"
+    },
+    "warnings": ["هزینه‌های کلی شما نسبت به ماه‌های قبل افزایش یافته است."],
+    "category_predictions": [
+      { "category_id": 1, "category_name": "خوراک", "predicted_amount": 2000000, "trend": "افزایشی" }
+    ]
+  }
+}
+```
+
+**روند (`trend`):** `پایدار` · `افزایشی` · `کاهشی`
+
+**سطح اطمینان (`confidence_level`):** `کم` · `متوسط` · `بالا`
+
+### `GET /api/forecast/cashflow`
+
+```json
+{
+  "success": true,
+  "data": {
+    "confidence_level": "متوسط",
+    "target_month": "2026-07",
+    "cashflow": [
+      { "month": "2026-04", "income": 14000000, "expense": 5000000, "saving": 9000000, "type": "actual", "type_label": "واقعی" },
+      { "month": "2026-07", "income": 15000000, "expense": 6200000, "saving": 8800000, "type": "predicted", "type_label": "پیش‌بینی‌شده" }
+    ]
+  }
+}
+```
+
+---
+
+## APIهای Legacy (بدون auth)
+
+این endpointها برای سازگاری با نسخه قبلی هستند. **فرانت‌اند جدید باید از APIهای auth-based استفاده کند.**
+
+### Incomes — `/api/incomes` 🔓
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/incomes` |
+| GET | `/api/incomes` |
+| PUT | `/api/incomes/:id` |
+| DELETE | `/api/incomes/:id` |
 
 ```json
 {
@@ -106,126 +584,16 @@ Create a new income record.
 }
 ```
 
-**Validation rules:**
-- `title` — required, minimum 2 characters
-- `amount` — required, must be greater than 0
-- `category` — required (`حقوق`, `فریلنس`, `هدیه`, `پاداش`, `سرمایه‌گذاری`, `سایر`)
-- `date` — required, valid date string
+**دسته‌های درآمد:** `حقوق` · `فریلنس` · `هدیه` · `پاداش` · `سرمایه‌گذاری` · `سایر`
 
-**Response 201:**
+### Expenses — `/api/expenses` 🔓
 
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "title": "حقوق خرداد",
-    "amount": 15000000,
-    "category": "حقوق",
-    "date": "2026-06-01"
-  }
-}
-```
-
-**Response 400:**
-
-```json
-{
-  "success": false,
-  "message": "Validation failed",
-  "errors": ["Title is required", "Amount must be greater than 0"]
-}
-```
-
----
-
-### `GET /api/incomes`
-
-List all income records with optional filters.
-
-**Query parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `category` | string | Filter by category |
-| `startDate` | string | Filter from date (inclusive) |
-| `endDate` | string | Filter to date (inclusive) |
-| `minAmount` | number | Minimum amount |
-| `maxAmount` | number | Maximum amount |
-
-**Example:** `GET /api/incomes?category=حقوق&startDate=2026-01-01&endDate=2026-06-30`
-
-**Response 200:**
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "title": "حقوق خرداد",
-      "amount": 15000000,
-      "category": "حقوق",
-      "date": "2026-06-01"
-    }
-  ]
-}
-```
-
----
-
-### `PUT /api/incomes/:id`
-
-Update an existing income record.
-
-**Request body:** Same as `POST /api/incomes`
-
-**Response 200:** Updated income object in `data`
-
-**Response 404:**
-
-```json
-{
-  "success": false,
-  "message": "Income not found"
-}
-```
-
----
-
-### `DELETE /api/incomes/:id`
-
-Delete an income record.
-
-**Response 200:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "message": "Income deleted successfully"
-  }
-}
-```
-
-**Response 404:**
-
-```json
-{
-  "success": false,
-  "message": "Income not found"
-}
-```
-
----
-
-## Expenses
-
-### `POST /api/expenses`
-
-Create a new expense record.
-
-**Request body:**
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/expenses` |
+| GET | `/api/expenses` |
+| PUT | `/api/expenses/:id` |
+| DELETE | `/api/expenses/:id` |
 
 ```json
 {
@@ -236,407 +604,69 @@ Create a new expense record.
 }
 ```
 
-**Validation rules:**
-- `title` — required, minimum 2 characters
-- `amount` — required, must be greater than 0
-- `category` — required (`غذا`, `حمل‌ونقل`, `قبض`, `تفریح`, `خرید`, `سلامت`, `آموزش`, `سفر`, `سایر`)
-- `date` — required, valid date string
+**دسته‌های هزینه:** `غذا` · `حمل‌ونقل` · `قبض` · `تفریح` · `خرید` · `سلامت` · `آموزش` · `سفر` · `سایر`
 
-**Response 201:**
+**فیلترها:** `category` · `startDate` · `endDate` · `minAmount` · `maxAmount`
+
+### Savings Goal — `/api/savings-goal` 🔓
+
+| Method | Endpoint |
+|--------|----------|
+| POST | `/api/savings-goal` |
+| GET | `/api/savings-goal` |
 
 ```json
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "title": "خرید مواد غذایی",
-    "amount": 500000,
-    "category": "غذا",
-    "date": "2026-06-05"
-  }
-}
+{ "target_amount": 10000000 }
 ```
 
 ---
 
-### `GET /api/expenses`
+## فرمت پاسخ و خطاها
 
-List all expense records with optional filters.
-
-**Query parameters:** Same as incomes (`category`, `startDate`, `endDate`, `minAmount`, `maxAmount`)
-
-**Example:** `GET /api/expenses?category=غذا&minAmount=100000&maxAmount=500000`
-
-**Response 200:**
+### موفق
 
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "id": 1,
-      "title": "خرید مواد غذایی",
-      "amount": 500000,
-      "category": "غذا",
-      "date": "2026-06-05"
-    }
-  ]
+  "data": {}
 }
 ```
 
----
-
-### `PUT /api/expenses/:id`
-
-Update an existing expense record.
-
-**Response 200:** Updated expense in `data`
-
-**Response 404:**
+### خطا
 
 ```json
 {
   "success": false,
-  "message": "Expense not found"
+  "message": "توضیح خطا"
 }
 ```
 
----
-
-### `DELETE /api/expenses/:id`
-
-Delete an expense record.
-
-**Response 200:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "message": "Expense deleted successfully"
-  }
-}
-```
-
----
-
-## Budgets
-
-### `POST /api/budgets`
-
-Set a monthly budget limit for a category.
-
-**Request body:**
-
-```json
-{
-  "category": "غذا",
-  "limit_amount": 3000000
-}
-```
-
-**Validation rules:**
-- `category` — required, valid expense category
-- `limit_amount` — required, must be greater than 0
-
-**Response 201:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "category": "غذا",
-    "limit_amount": 3000000
-  }
-}
-```
-
-**Response 409:**
+### اعتبارسنجی (400)
 
 ```json
 {
   "success": false,
-  "message": "Budget for this category already exists"
+  "message": "اعتبارسنجی ناموفق بود",
+  "errors": ["عنوان الزامی است", "مبلغ باید بزرگ‌تر از ۰ باشد"]
 }
 ```
 
----
-
-### `GET /api/budgets`
-
-List all budget limits.
-
-**Response 200:**
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "category": "غذا",
-      "limit_amount": 3000000
-    }
-  ]
-}
-```
-
----
-
-### `PUT /api/budgets/:id`
-
-Update a budget.
-
-**Response 404:**
-
-```json
-{
-  "success": false,
-  "message": "Budget not found"
-}
-```
-
----
-
-### `DELETE /api/budgets/:id`
-
-Delete a budget.
-
-**Response 200:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "message": "Budget deleted successfully"
-  }
-}
-```
-
----
-
-### `GET /api/budgets/status`
-
-View spending status for each budget category (current month only).
-
-**Response 200:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "period": {
-      "startDate": "2026-06-01",
-      "endDate": "2026-06-30"
-    },
-    "budgets": [
-      {
-        "category": "غذا",
-        "limit": 3000000,
-        "spent": 3500000,
-        "remaining": -500000,
-        "status": "Exceeded"
-      }
-    ]
-  }
-}
-```
-
-**Status values:** `OK`, `Warning`, `Exceeded`
-
----
-
-## Dashboard
-
-### `GET /api/dashboard`
-
-Full financial overview.
-
-**Response 200:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "balance": 10000000,
-    "totalIncome": 15000000,
-    "totalExpense": 5000000,
-    "topCategory": "غذا",
-    "budgetExceeded": ["غذا"],
-    "incomeCount": 5,
-    "expenseCount": 20
-  }
-}
-```
-
----
-
-### `GET /api/dashboard/balance`
-
-Current balance summary.
-
-**Response 200:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "totalIncome": 15000000,
-    "totalExpense": 5000000,
-    "balance": 10000000
-  }
-}
-```
-
----
-
-### `GET /api/dashboard/report`
-
-Expense statistics and category breakdown.
-
-**Response 200:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "totalExpense": 5000000,
-    "expenseCount": 12,
-    "topCategory": "غذا",
-    "categories": {
-      "غذا": 2000000,
-      "حمل‌ونقل": 1000000
-    }
-  }
-}
-```
-
----
-
-### `GET /api/dashboard/monthly-report`
-
-Current month income, expenses, and balance.
-
-**Response 200:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "monthlyIncome": 15000000,
-    "monthlyExpense": 5000000,
-    "monthlyBalance": 10000000,
-    "topCategory": "غذا",
-    "period": {
-      "startDate": "2026-06-01",
-      "endDate": "2026-06-30"
-    }
-  }
-}
-```
-
----
-
-## Savings Goal
-
-### `POST /api/savings-goal`
-
-Set a savings target.
-
-**Request body:**
-
-```json
-{
-  "target_amount": 10000000
-}
-```
-
-**Validation rules:**
-- `target_amount` — required, must be greater than 0
-
-**Response 201:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "target": 10000000,
-    "currentBalance": 6500000,
-    "progress": 65,
-    "id": 1
-  }
-}
-```
-
----
-
-### `GET /api/savings-goal`
-
-Get savings goal progress.
-
-**Response 200:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "target": 10000000,
-    "currentBalance": 6500000,
-    "progress": 65
-  }
-}
-```
-
-**Response 404:**
-
-```json
-{
-  "success": false,
-  "message": "No savings goal has been set"
-}
-```
-
----
-
-## Error Responses
-
-| Status | Description | Example message |
-|--------|-------------|-----------------|
-| 400 | Validation or bad request | `Validation failed` |
-| 404 | Resource or route not found | `Route not found` |
-| 409 | Duplicate budget category | `Budget for this category already exists` |
-| 500 | Internal server error | `Internal Server Error` |
-
-### Route not found example
-
-**Request:** `GET /api/random`
-
-**Response 404:**
-
-```json
-{
-  "success": false,
-  "message": "Route not found"
-}
-```
-
-### Internal server error example
-
-**Response 500:**
-
-```json
-{
-  "success": false,
-  "message": "Internal Server Error"
-}
-```
-
----
-
-## Security & Logging
-
-- **CORS** — enabled for all origins
-- **Helmet** — security HTTP headers enabled
-- **Morgan** — all incoming requests logged to the console
-- **SQL safety** — all queries use parameterized statements (`?` placeholders)
+### کدهای HTTP
+
+| کد | معنی |
+|----|------|
+| 200 | موفق |
+| 201 | ایجاد شد |
+| 400 | اعتبارسنجی / درخواست نامعتبر |
+| 401 | توکن نامعتبر یا منقضی |
+| 404 | منبع یافت نشد |
+| 409 | تداخل (ایمیل تکراری، بودجه تکراری) |
+| 429 | تلاش بیش از حد (auth) |
+| 500 | خطای داخلی |
+
+### امنیت
+
+- **CORS** — از `CORS_ORIGIN` در `.env` (پیش‌فرض: `http://localhost:5173`)
+- **Helmet** — هدرهای امنیتی
+- **Morgan** — لاگ درخواست‌ها
+- **SQL** — پارامتری (`?`)
