@@ -81,7 +81,7 @@ Each feature is designed to answer a specific question a user might have about t
 
 ## API Endpoints
 
-Base URL: `http://localhost:3456` (or the next available port if 3456 is busy)
+Base URL: `http://localhost:3465`
 
 ### Health Check
 
@@ -361,7 +361,7 @@ cd backend
 npm start
 ```
 
-The server starts on `http://localhost:3458` by default. If that port is busy, the next available port is used automatically.
+سرور روی `http://localhost:3465` اجرا می‌شود. اگر پورت اشغال باشد، اولین پورت آزاد بعدی انتخاب می‌شود (پورت واقعی در ترمینال نمایش داده می‌شود).
 
 Optional:
 
@@ -453,7 +453,7 @@ Below is a complete guide mapping common user questions to the feature and endpo
 
 1. Start the server from the `backend` folder with `npm start` and note the port shown in the terminal.
 2. In Postman, create an environment variable:
-   - `baseUrl` = `http://localhost:3458`
+   - `baseUrl` = `http://localhost:3465`
 
 ### Suggested test flow
 

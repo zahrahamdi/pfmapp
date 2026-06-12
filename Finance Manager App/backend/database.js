@@ -6,7 +6,11 @@ const {
 const path = require('path');
 const fs = require('fs');
 
-const dbPath = path.join(__dirname, 'database', 'finance.db');
+const dbPath = process.env.DATABASE_PATH
+  ? path.isAbsolute(process.env.DATABASE_PATH)
+    ? process.env.DATABASE_PATH
+    : path.join(__dirname, process.env.DATABASE_PATH)
+  : path.join(__dirname, 'database', 'finance.db');
 
 const dbDir = path.dirname(dbPath);
 if (!fs.existsSync(dbDir)) {
@@ -56,7 +60,18 @@ async function columnExists(table, column) {
   return columns.some((col) => col.name === column);
 }
 
+async function tableExists(table) {
+  const row = await get(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name = ?",
+    [table]
+  );
+  return Boolean(row);
+}
+
 async function addColumnIfNotExists(table, column, definition) {
+  if (!(await tableExists(table))) {
+    return;
+  }
   const exists = await columnExists(table, column);
   if (!exists) {
     await run(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
@@ -108,9 +123,89 @@ async function migrateDatabase() {
 
   await migrateLegacyCategories('expenses', LEGACY_EXPENSE_CATEGORY_MAP);
   await migrateLegacyCategories('budgets', LEGACY_EXPENSE_CATEGORY_MAP);
+
+  await addColumnIfNotExists('budgets', 'user_id', 'INTEGER');
+  await addColumnIfNotExists('budgets', 'category_id', 'INTEGER');
+  await addColumnIfNotExists('budgets', 'amount', 'INTEGER');
+  await addColumnIfNotExists('budgets', 'month', 'INTEGER');
+  await addColumnIfNotExists('budgets', 'year', 'INTEGER');
+  await addColumnIfNotExists('budgets', 'created_at', 'TEXT');
+  await addColumnIfNotExists('budgets', 'updated_at', 'TEXT');
+
+  if (await columnExists('budgets', 'created_at')) {
+    await run(`UPDATE budgets SET created_at = datetime('now') WHERE created_at IS NULL`);
+  }
+  if (await columnExists('budgets', 'updated_at')) {
+    await run(`UPDATE budgets SET updated_at = datetime('now') WHERE updated_at IS NULL`);
+  }
 }
 
 async function initDatabase() {
+  await run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
+  await run(`
+    CREATE TABLE IF NOT EXISTS accounts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL CHECK(type IN ('cash', 'bank', 'wallet', 'savings', 'credit', 'other')),
+      initial_balance REAL NOT NULL DEFAULT 0,
+      current_balance REAL NOT NULL DEFAULT 0,
+      currency TEXT NOT NULL DEFAULT 'IRR',
+      deleted_at TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  await run(`
+    CREATE TABLE IF NOT EXISTS categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL CHECK(type IN ('income', 'expense')),
+      icon TEXT,
+      color TEXT,
+      is_default INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      UNIQUE(user_id, name, type)
+    )
+  `);
+
+  await run(`
+    CREATE TABLE IF NOT EXISTS transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      account_id INTEGER NOT NULL,
+      category_id INTEGER,
+      type TEXT NOT NULL CHECK(type IN ('income', 'expense', 'transfer')),
+      amount REAL NOT NULL CHECK(amount > 0),
+      date TEXT NOT NULL,
+      note TEXT,
+      tags TEXT,
+      payment_method TEXT,
+      target_account_id INTEGER,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (account_id) REFERENCES accounts(id),
+      FOREIGN KEY (category_id) REFERENCES categories(id),
+      FOREIGN KEY (target_account_id) REFERENCES accounts(id)
+    )
+  `);
+
   await run(`
     CREATE TABLE IF NOT EXISTS incomes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -134,8 +229,17 @@ async function initDatabase() {
   await run(`
     CREATE TABLE IF NOT EXISTS budgets (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      category TEXT NOT NULL UNIQUE,
-      limit_amount INTEGER NOT NULL CHECK(limit_amount > 0)
+      category TEXT,
+      limit_amount INTEGER CHECK(limit_amount IS NULL OR limit_amount > 0),
+      user_id INTEGER,
+      category_id INTEGER,
+      amount INTEGER CHECK(amount IS NULL OR amount > 0),
+      month INTEGER,
+      year INTEGER,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (category_id) REFERENCES categories(id)
     )
   `);
 
@@ -148,6 +252,12 @@ async function initDatabase() {
   `);
 
   await migrateDatabase();
+
+  await run(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_budgets_user_category_month_year
+    ON budgets(user_id, category_id, month, year)
+    WHERE user_id IS NOT NULL AND category_id IS NOT NULL
+  `);
 }
 
 module.exports = {
@@ -156,4 +266,5 @@ module.exports = {
   get,
   all,
   initDatabase,
+  dbPath,
 };

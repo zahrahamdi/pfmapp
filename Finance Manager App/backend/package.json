@@ -1,16 +1,22 @@
 {
   "name": "finance-manager-app",
   "version": "1.0.0",
-  "description": "Personal Finance Manager backend with Express and SQLite",
+  "description": "بک‌اند مدیریت مالی شخصی با Express و SQLite",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "setup": "node scripts/setup-db.js",
+    "db:setup": "node scripts/setup-db.js"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
     "express": "^4.21.2",
+    "express-rate-limit": "^7.5.1",
     "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.2",
     "morgan": "^1.11.0",
     "sqlite3": "^5.1.7",
     "swagger-jsdoc": "^6.3.0",

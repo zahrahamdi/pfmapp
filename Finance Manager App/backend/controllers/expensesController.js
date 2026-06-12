@@ -5,6 +5,7 @@ const {
   validateExpense,
   parsePositiveAmount,
 } = require('../utils/validation');
+const { MESSAGES } = require('../utils/messages');
 
 function buildExpenseFilters(query) {
   const conditions = [];
@@ -28,7 +29,7 @@ function buildExpenseFilters(query) {
   if (query.minAmount !== undefined) {
     const minAmount = Number(query.minAmount);
     if (!Number.isFinite(minAmount) || minAmount < 0) {
-      throw createHttpError(400, 'minAmount must be a non-negative number');
+      throw createHttpError(400, MESSAGES.MIN_AMOUNT_INVALID);
     }
     conditions.push('amount >= ?');
     params.push(Math.round(minAmount));
@@ -37,7 +38,7 @@ function buildExpenseFilters(query) {
   if (query.maxAmount !== undefined) {
     const maxAmount = Number(query.maxAmount);
     if (!Number.isFinite(maxAmount) || maxAmount < 0) {
-      throw createHttpError(400, 'maxAmount must be a non-negative number');
+      throw createHttpError(400, MESSAGES.MAX_AMOUNT_INVALID);
     }
     conditions.push('amount <= ?');
     params.push(Math.round(maxAmount));
@@ -83,7 +84,7 @@ async function updateExpense(req, res) {
   const existing = await get('SELECT * FROM expenses WHERE id = ?', [id]);
 
   if (!existing) {
-    throw createHttpError(404, 'Expense not found');
+    throw createHttpError(404, MESSAGES.EXPENSE_NOT_FOUND);
   }
 
   const { title, amount, category, date } = req.body;
@@ -112,10 +113,10 @@ async function deleteExpense(req, res) {
   const result = await run('DELETE FROM expenses WHERE id = ?', [id]);
 
   if (result.changes === 0) {
-    throw createHttpError(404, 'Expense not found');
+    throw createHttpError(404, MESSAGES.EXPENSE_NOT_FOUND);
   }
 
-  return sendSuccess(res, { message: 'Expense deleted successfully' });
+  return sendSuccess(res, { message: MESSAGES.EXPENSE_DELETED });
 }
 
 module.exports = {

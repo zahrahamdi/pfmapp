@@ -1,3 +1,5 @@
+const { MESSAGES } = require('../utils/messages');
+
 function asyncHandler(fn) {
   return (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
@@ -12,7 +14,7 @@ function errorHandler(err, req, res, next) {
   if (err.statusCode === 400 && Array.isArray(err.errors) && err.errors.length > 0) {
     return res.status(400).json({
       success: false,
-      message: 'Validation failed',
+      message: MESSAGES.VALIDATION_FAILED,
       errors: err.errors,
     });
   }
@@ -21,20 +23,23 @@ function errorHandler(err, req, res, next) {
     return res.status(err.statusCode).json({
       success: false,
       message: err.message,
+      errors: err.errors || [],
     });
   }
 
   if (err.message && err.message.includes('UNIQUE')) {
     return res.status(409).json({
       success: false,
-      message: 'A record with this value already exists',
+      message: MESSAGES.DUPLICATE_RECORD,
+      errors: [],
     });
   }
 
-  console.error('Unhandled error:', err);
+  console.error('خطای مدیریت‌نشده:', err);
   return res.status(500).json({
     success: false,
-    message: 'Internal Server Error',
+    message: MESSAGES.INTERNAL_ERROR,
+    errors: [],
   });
 }
 
@@ -45,7 +50,7 @@ function createHttpError(statusCode, message) {
 }
 
 function createValidationError(errors) {
-  const error = new Error('Validation failed');
+  const error = new Error(MESSAGES.VALIDATION_FAILED);
   error.statusCode = 400;
   error.errors = errors;
   return error;
@@ -54,7 +59,8 @@ function createValidationError(errors) {
 function notFoundHandler(req, res) {
   return res.status(404).json({
     success: false,
-    message: 'Route not found',
+    message: MESSAGES.ROUTE_NOT_FOUND,
+    errors: [],
   });
 }
 

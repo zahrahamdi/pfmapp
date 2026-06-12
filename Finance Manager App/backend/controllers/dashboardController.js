@@ -1,5 +1,6 @@
 const { get, all } = require('../database');
 const { getBudgetStatus, getMonthlySpentForCategory } = require('./budgetsController');
+const { BUDGET_STATUS } = require('../utils/constants');
 const { getCurrentMonthRange } = require('../utils/validation');
 const { sendSuccess } = require('../utils/response');
 
@@ -44,13 +45,13 @@ async function getExpenseCategoryBreakdown(whereClause = '', params = []) {
 }
 
 async function getExceededBudgetCategories() {
-  const budgets = await all('SELECT * FROM budgets');
+  const budgets = await all('SELECT * FROM budgets WHERE user_id IS NULL');
 
   const exceeded = [];
   for (const budget of budgets) {
     const { spent } = await getMonthlySpentForCategory(budget.category);
 
-    if (getBudgetStatus(spent, budget.limit_amount) === 'Exceeded') {
+    if (getBudgetStatus(spent, budget.limit_amount) === BUDGET_STATUS.EXCEEDED) {
       exceeded.push(budget.category);
     }
   }

@@ -2,6 +2,7 @@ const { run, get } = require('../database');
 const { createHttpError, createValidationError } = require('../middlewares/errorHandler');
 const { sendSuccess } = require('../utils/response');
 const { validateSavingsGoal, parsePositiveAmount } = require('../utils/validation');
+const { MESSAGES } = require('../utils/messages');
 
 async function getCurrentBalance() {
   const incomeRow = await get('SELECT COALESCE(SUM(amount), 0) AS total FROM incomes');
@@ -39,7 +40,7 @@ async function getSavingsGoal(req, res) {
   const goal = await get('SELECT * FROM savings_goals ORDER BY id DESC LIMIT 1');
 
   if (!goal) {
-    throw createHttpError(404, 'No savings goal has been set');
+    throw createHttpError(404, MESSAGES.SAVINGS_GOAL_NOT_SET);
   }
 
   const currentBalance = await getCurrentBalance();

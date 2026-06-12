@@ -4,6 +4,8 @@ backend/database/finance.db
 backend/database/*.db-journal
 .env
 .env.*
+!.env.example
+!backend/.env.example
 *.log
 npm-debug.log*
 .DS_Store

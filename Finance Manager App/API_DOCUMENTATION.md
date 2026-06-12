@@ -2,9 +2,11 @@
 
 > Backend source code is in the `backend/` folder. Run the server with `cd backend && npm start`.
 
-Base URL: `http://localhost:3458`
+Base URL: `http://localhost:3465`
 
-Swagger UI: `http://localhost:3458/api-docs`
+Swagger UI: `http://localhost:3465/api-docs`
+
+> پورت پیش‌فرض: `3465` (در `backend/.env`). اگر اشغال باشد، سرور اولین پورت آزاد بعدی را انتخاب می‌کند — پورت واقعی را در خروجی ترمینال ببینید.
 
 ---
 

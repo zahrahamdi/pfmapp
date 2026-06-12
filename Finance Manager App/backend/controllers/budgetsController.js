@@ -1,19 +1,20 @@
 const { run, get, all } = require('../database');
 const { createHttpError, createValidationError } = require('../middlewares/errorHandler');
 const { sendSuccess } = require('../utils/response');
-const { BUDGET_WARNING_THRESHOLD } = require('../utils/constants');
+const { BUDGET_WARNING_THRESHOLD, BUDGET_STATUS } = require('../utils/constants');
+const { MESSAGES, BUDGET_STATUS_FA } = require('../utils/messages');
 const { validateBudget, parsePositiveAmount, getCurrentMonthRange } = require('../utils/validation');
 
 function getBudgetStatus(spent, limit) {
   if (spent > limit) {
-    return 'Exceeded';
+    return BUDGET_STATUS.EXCEEDED;
   }
 
   if (spent >= limit * BUDGET_WARNING_THRESHOLD) {
-    return 'Warning';
+    return BUDGET_STATUS.WARNING;
   }
 
-  return 'OK';
+  return BUDGET_STATUS.SAFE;
 }
 
 async function createBudget(req, res) {
@@ -36,23 +37,25 @@ async function createBudget(req, res) {
     return sendSuccess(res, budget, 201);
   } catch (error) {
     if (error.message && error.message.includes('UNIQUE')) {
-      throw createHttpError(409, 'Budget for this category already exists');
+      throw createHttpError(409, MESSAGES.BUDGET_EXISTS);
     }
     throw error;
   }
 }
 
 async function getBudgets(req, res) {
-  const budgets = await all('SELECT id, category, limit_amount FROM budgets ORDER BY category ASC');
+  const budgets = await all(
+    'SELECT id, category, limit_amount FROM budgets WHERE user_id IS NULL ORDER BY category ASC'
+  );
   return sendSuccess(res, budgets);
 }
 
 async function updateBudget(req, res) {
   const { id } = req.params;
-  const existing = await get('SELECT * FROM budgets WHERE id = ?', [id]);
+  const existing = await get('SELECT * FROM budgets WHERE id = ? AND user_id IS NULL', [id]);
 
   if (!existing) {
-    throw createHttpError(404, 'Budget not found');
+    throw createHttpError(404, MESSAGES.BUDGET_NOT_FOUND);
   }
 
   const { category, limit_amount } = req.body;
@@ -74,7 +77,7 @@ async function updateBudget(req, res) {
     return sendSuccess(res, budget);
   } catch (error) {
     if (error.message && error.message.includes('UNIQUE')) {
-      throw createHttpError(409, 'Budget for this category already exists');
+      throw createHttpError(409, MESSAGES.BUDGET_EXISTS);
     }
     throw error;
   }
@@ -82,13 +85,13 @@ async function updateBudget(req, res) {
 
 async function deleteBudget(req, res) {
   const { id } = req.params;
-  const result = await run('DELETE FROM budgets WHERE id = ?', [id]);
+  const result = await run('DELETE FROM budgets WHERE id = ? AND user_id IS NULL', [id]);
 
   if (result.changes === 0) {
-    throw createHttpError(404, 'Budget not found');
+    throw createHttpError(404, MESSAGES.BUDGET_NOT_FOUND);
   }
 
-  return sendSuccess(res, { message: 'Budget deleted successfully' });
+  return sendSuccess(res, { message: MESSAGES.BUDGET_DELETED });
 }
 
 async function getMonthlySpentForCategory(category) {
@@ -101,7 +104,7 @@ async function getMonthlySpentForCategory(category) {
 }
 
 async function getBudgetStatusReport(req, res) {
-  const budgets = await all('SELECT * FROM budgets ORDER BY category ASC');
+  const budgets = await all('SELECT * FROM budgets WHERE user_id IS NULL ORDER BY category ASC');
   const { startDate, endDate } = getCurrentMonthRange();
 
   const statusList = await Promise.all(
@@ -114,7 +117,7 @@ async function getBudgetStatusReport(req, res) {
         limit: budget.limit_amount,
         spent,
         remaining,
-        status: getBudgetStatus(spent, budget.limit_amount),
+        status: BUDGET_STATUS_FA[getBudgetStatus(spent, budget.limit_amount)] || getBudgetStatus(spent, budget.limit_amount),
       };
     })
   );

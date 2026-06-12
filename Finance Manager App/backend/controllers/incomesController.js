@@ -5,6 +5,7 @@ const {
   validateIncome,
   parsePositiveAmount,
 } = require('../utils/validation');
+const { MESSAGES } = require('../utils/messages');
 
 function buildIncomeFilters(query) {
   const conditions = [];
@@ -28,7 +29,7 @@ function buildIncomeFilters(query) {
   if (query.minAmount !== undefined) {
     const minAmount = Number(query.minAmount);
     if (!Number.isFinite(minAmount) || minAmount < 0) {
-      throw createHttpError(400, 'minAmount must be a non-negative number');
+      throw createHttpError(400, MESSAGES.MIN_AMOUNT_INVALID);
     }
     conditions.push('amount >= ?');
     params.push(Math.round(minAmount));
@@ -37,7 +38,7 @@ function buildIncomeFilters(query) {
   if (query.maxAmount !== undefined) {
     const maxAmount = Number(query.maxAmount);
     if (!Number.isFinite(maxAmount) || maxAmount < 0) {
-      throw createHttpError(400, 'maxAmount must be a non-negative number');
+      throw createHttpError(400, MESSAGES.MAX_AMOUNT_INVALID);
     }
     conditions.push('amount <= ?');
     params.push(Math.round(maxAmount));
@@ -80,7 +81,7 @@ async function updateIncome(req, res) {
   const existing = await get('SELECT * FROM incomes WHERE id = ?', [id]);
 
   if (!existing) {
-    throw createHttpError(404, 'Income not found');
+    throw createHttpError(404, MESSAGES.INCOME_NOT_FOUND);
   }
 
   const { title, amount, category, date } = req.body;
@@ -106,10 +107,10 @@ async function deleteIncome(req, res) {
   const result = await run('DELETE FROM incomes WHERE id = ?', [id]);
 
   if (result.changes === 0) {
-    throw createHttpError(404, 'Income not found');
+    throw createHttpError(404, MESSAGES.INCOME_NOT_FOUND);
   }
 
-  return sendSuccess(res, { message: 'Income deleted successfully' });
+  return sendSuccess(res, { message: MESSAGES.INCOME_DELETED });
 }
 
 module.exports = {
