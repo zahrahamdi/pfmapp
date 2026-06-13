@@ -30,6 +30,25 @@ function getPastCompletedMonths(count, referenceDate = new Date()) {
   return months;
 }
 
+function getPastAndCurrentMonths(count, referenceDate = new Date()) {
+  const months = [];
+  let year = referenceDate.getFullYear();
+  let month = referenceDate.getMonth() + 1;
+
+  months.push({ year, month, label: getMonthLabel(year, month) });
+
+  for (let i = 0; i < count - 1; i += 1) {
+    month -= 1;
+    if (month < 1) {
+      month = 12;
+      year -= 1;
+    }
+    months.unshift({ year, month, label: getMonthLabel(year, month) });
+  }
+
+  return months;
+}
+
 function getNextMonth(referenceDate = new Date()) {
   let year = referenceDate.getFullYear();
   let month = referenceDate.getMonth() + 2;
@@ -258,7 +277,7 @@ async function buildForecastData(userId) {
 
   const monthsWithData = await getTransactionMonthCount(userId);
   const confidenceLevel = getConfidenceLevel(monthsWithData);
-  const basisMonths = getPastCompletedMonths(FORECAST_BASIS_MONTHS);
+  const basisMonths = getPastAndCurrentMonths(FORECAST_BASIS_MONTHS);
   const nextMonth = getNextMonth();
 
   const monthlyHistory = [];

@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>چرتکه — مدیریت مالی شخصی</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Toast -->
+  <div id="toast-container"></div>
+
+  <!-- Confirm Dialog -->
+  <div id="confirm-overlay" class="hidden">
+    <div class="confirm-dialog">
+      <p id="confirm-message"></p>
+      <div class="confirm-actions">
+        <button type="button" id="confirm-no" class="btn btn-outline">خیر</button>
+        <button type="button" id="confirm-yes" class="btn btn-danger">بله</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Layout -->
+  <div id="auth-layout" class="auth-layout">
+    <!-- Login -->
+    <div id="page-login" class="auth-page hidden">
+      <div class="auth-card">
+        <div class="auth-logo">
+          <h1>چرتکه</h1>
+        </div>
+        <p class="auth-tagline">حساب کتاب مالیت، ساده‌تر از همیشه</p>
+        <form id="login-form" novalidate>
+          <div class="form-error" id="login-form-error" data-error-for="login-form"></div>
+          <div class="form-group">
+            <label for="login-email">ایمیل</label>
+            <input type="email" id="login-email" name="email" autocomplete="email" placeholder="example@email.com">
+            <div class="field-error" id="login-email-error" data-error-for="login-email"></div>
+          </div>
+          <div class="form-group">
+            <label for="login-password">رمز عبور</label>
+            <input type="password" id="login-password" name="password" autocomplete="current-password" placeholder="رمز عبور">
+            <div class="field-error" id="login-password-error" data-error-for="login-password"></div>
+          </div>
+          <button type="submit" id="login-submit" class="btn btn-primary">ورود</button>
+        </form>
+        <p class="auth-switch">
+          حساب کاربری ندارید؟
+          <a href="#register" id="go-register">ثبت نام</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- Register -->
+    <div id="page-register" class="auth-page hidden">
+      <div class="auth-card">
+        <div class="auth-logo">
+          <h1>چرتکه</h1>
+        </div>
+        <p class="auth-tagline">حساب کتاب مالیت، ساده‌تر از همیشه</p>
+        <form id="register-form" novalidate>
+          <div class="form-error" id="register-form-error" data-error-for="register-form"></div>
+          <div class="form-group">
+            <label for="register-name">نام</label>
+            <input type="text" id="register-name" name="name" autocomplete="name" placeholder="نام شما">
+            <div class="field-error" id="register-name-error" data-error-for="register-name"></div>
+          </div>
+          <div class="form-group">
+            <label for="register-email">ایمیل</label>
+            <input type="email" id="register-email" name="email" autocomplete="email" placeholder="example@email.com">
+            <div class="field-error" id="register-email-error" data-error-for="register-email"></div>
+          </div>
+          <div class="form-group">
+            <label for="register-password">رمز عبور</label>
+            <input type="password" id="register-password" name="password" autocomplete="new-password" placeholder="حداقل ۶ کاراکتر">
+            <div class="field-error" id="register-password-error" data-error-for="register-password"></div>
+          </div>
+          <button type="submit" id="register-submit" class="btn btn-primary">ثبت نام</button>
+        </form>
+        <p class="auth-switch">
+          حساب کاربری دارید؟
+          <a href="#login" id="go-login">ورود</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App Layout -->
+  <div id="app-layout" class="app-layout hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h2>چرتکه</h2>
+        <p>حساب کتاب مالیت، ساده‌تر از همیشه</p>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#overview" class="nav-item" data-route="overview">
+          <span class="nav-icon">📊</span>
+          <span>مرور کلی</span>
+        </a>
+        <a href="#cashflow" class="nav-item" data-route="cashflow">
+          <span class="nav-icon">💧</span>
+          <span>جریان نقدی</span>
+        </a>
+        <a href="#forecast" class="nav-item" data-route="forecast">
+          <span class="nav-icon">🔮</span>
+          <span>پیش‌بینی ماه آینده</span>
+        </a>
+        <a href="#accounts" class="nav-item" data-route="accounts">
+          <span class="nav-icon">🏦</span>
+          <span>حساب‌های من</span>
+        </a>
+        <a href="#transactions" class="nav-item" data-route="transactions">
+          <span class="nav-icon">💸</span>
+          <span>تراکنش‌های من</span>
+        </a>
+        <a href="#budgets" class="nav-item" data-route="budgets">
+          <span class="nav-icon">🎯</span>
+          <span>بودجه</span>
+        </a>
+        <a href="#savings" class="nav-item" data-route="savings">
+          <span class="nav-icon">🏅</span>
+          <span>هدف پس‌انداز</span>
+        </a>
+        <a href="#categories" class="nav-item" data-route="categories">
+          <span class="nav-icon">🏷️</span>
+          <span>مدیریت دسته‌بندی</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <button type="button" id="logout-btn" class="logout-btn hidden">خروج از حساب</button>
+        <div id="sidebar-user" class="sidebar-user">
+          <div id="sidebar-avatar" class="user-avatar">?</div>
+          <span id="sidebar-user-name" class="user-name">کاربر</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+      <!-- Overview -->
+      <section id="page-overview" class="page-section hidden">
+        <div class="page-header">
+          <h1>مرور کلی</h1>
+          <p>خلاصه وضعیت مالی شما در یک نگاه</p>
+        </div>
+        <div class="page-toolbar">
+          <div id="overview-month-selector"></div>
+          <div id="overview-account-filter"></div>
+        </div>
+        <div id="overview-error" class="error-text hidden"></div>
+        <div id="overview-cards-row1" class="stats-row stats-row-4"></div>
+        <div id="overview-cards-row2" class="stats-row stats-row-3"></div>
+        <div id="overview-cards-row3" class="stats-row stats-row-3"></div>
+        <div id="overview-cards-row3b" class="stats-row stats-row-3"></div>
+        <div class="card chart-card">
+          <h3 class="chart-title">جریان نقدی ترکیبی</h3>
+          <div class="chart-container" style="height:320px">
+            <canvas id="overview-cashflow-chart"></canvas>
+          </div>
+        </div>
+        <div class="chart-grid-2">
+          <div class="card chart-card">
+            <h3 class="chart-title">تفکیک هزینه‌ها</h3>
+            <div class="chart-container pie-container">
+              <canvas id="overview-expense-pie"></canvas>
+            </div>
+            <div id="overview-expense-legend" class="chart-legend"></div>
+          </div>
+          <div class="card chart-card">
+            <h3 class="chart-title">تفکیک درآمدها</h3>
+            <div class="chart-container pie-container">
+              <canvas id="overview-income-pie"></canvas>
+            </div>
+            <div id="overview-income-legend" class="chart-legend"></div>
+          </div>
+        </div>
+        <div class="section-block">
+          <h3 class="section-title">وضعیت بودجه</h3>
+          <div id="overview-budgets-grid" class="budgets-grid"></div>
+          <div id="overview-budgets-empty" class="empty-state hidden">
+            <div class="empty-state-icon">📋</div>
+            <p>بودجه‌ای برای این ماه تعریف نشده است</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cashflow -->
+      <section id="page-cashflow" class="page-section hidden">
+        <div class="page-header">
+          <h1>جریان نقدی</h1>
+          <p>تحلیل ورود و خروج پول</p>
+        </div>
+        <div class="page-toolbar">
+          <div id="cashflow-month-selector"></div>
+          <div id="cashflow-account-filter"></div>
+        </div>
+        <div id="cashflow-error" class="error-text hidden"></div>
+        <div id="cashflow-cards-current" class="stats-row stats-row-3"></div>
+        <div id="cashflow-cards-forecast" class="stats-row stats-row-4"></div>
+        <div class="card chart-card">
+          <div class="chart-toolbar">
+            <h3 class="chart-title">نمودار جریان نقدی</h3>
+            <div class="chart-toggle" id="cashflow-mode-toggle">
+              <button type="button" class="chart-toggle-btn active" data-mode="weekly">هفتگی</button>
+              <button type="button" class="chart-toggle-btn" data-mode="daily">روزانه</button>
+            </div>
+          </div>
+          <div id="cashflow-chart-wrap" class="chart-container" style="height:320px">
+            <canvas id="cashflow-chart"></canvas>
+          </div>
+        </div>
+        <div class="card chart-card">
+          <h3 class="chart-title">جدول جریان نقدی</h3>
+          <div id="cashflow-table-wrap" class="flow-table-wrap">
+            <table id="cashflow-table" class="flow-table"></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Forecast -->
+      <section id="page-forecast" class="page-section hidden">
+        <div class="page-header">
+          <h1 id="forecast-header-title">پیش‌بینی ماه آینده</h1>
+          <p>پیش‌بینی هزینه‌ها و درآمد بر اساس الگوی گذشته</p>
+        </div>
+        <div id="forecast-error" class="error-text hidden"></div>
+        <div id="forecast-cards-current" class="stats-row stats-row-3"></div>
+        <div id="forecast-cards-predicted" class="stats-row stats-row-4"></div>
+        <div id="forecast-trend-summary" class="trend-summary hidden"></div>
+        <div id="forecast-warnings"></div>
+        <div class="chart-grid-2">
+          <div class="card chart-card">
+            <h3 class="chart-title">پیش‌بینی هزینه‌ها</h3>
+            <div class="chart-container pie-container">
+              <canvas id="forecast-expense-pie"></canvas>
+            </div>
+            <div id="forecast-expense-legend" class="chart-legend"></div>
+          </div>
+          <div class="card chart-card">
+            <h3 class="chart-title">پیش‌بینی درآمدها</h3>
+            <div class="chart-container pie-container">
+              <canvas id="forecast-income-pie"></canvas>
+            </div>
+            <div id="forecast-income-legend" class="chart-legend"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Accounts -->
+      <section id="page-accounts" class="page-section hidden">
+        <div class="page-header">
+          <h1>حساب‌های من</h1>
+          <p>مدیریت حساب‌های بانکی، نقدی و کیف پول</p>
+        </div>
+
+        <div class="card total-balance-card">
+          <div class="label">موجودی کل</div>
+          <div class="amount" id="accounts-total-balance">۰ تومان</div>
+        </div>
+
+        <div id="accounts-grid" class="accounts-grid"></div>
+
+        <div id="accounts-empty" class="empty-state hidden">
+          <div class="empty-state-icon">🏦</div>
+          <p>هنوز حسابی ثبت نشده است</p>
+          <p>با دکمه زیر اولین حساب خود را بسازید</p>
+        </div>
+
+        <div class="page-actions">
+          <button type="button" id="add-account-btn" class="btn btn-primary" style="width: auto; padding: 12px 32px;">
+            + حساب جدید
+          </button>
+        </div>
+      </section>
+
+      <!-- Transactions -->
+      <section id="page-transactions" class="page-section hidden">
+        <div class="page-header">
+          <h1>تراکنش‌های من</h1>
+          <p>ثبت و مدیریت درآمد، هزینه و انتقال</p>
+        </div>
+
+        <div id="tx-account-cards" class="account-cards-scroll"></div>
+
+        <div class="filter-bar card filter-bar-compact tx-filter-panel">
+          <div class="tx-filter-grid">
+            <div class="filter-group">
+              <label>نوع</label>
+              <div class="toggle-group toggle-group-filter" id="tx-filter-type">
+                <button type="button" class="toggle-btn active" data-value="">همه</button>
+                <button type="button" class="toggle-btn" data-value="income">درآمد</button>
+                <button type="button" class="toggle-btn" data-value="expense">هزینه</button>
+                <button type="button" class="toggle-btn" data-value="transfer">انتقال</button>
+              </div>
+            </div>
+            <div class="filter-group">
+              <label for="tx-filter-category">دسته‌بندی</label>
+              <select id="tx-filter-category"><option value="">همه</option></select>
+            </div>
+            <div class="filter-group">
+              <label>از تاریخ</label>
+              <div id="tx-filter-from"></div>
+            </div>
+            <div class="filter-group">
+              <label>تا تاریخ</label>
+              <div id="tx-filter-to"></div>
+            </div>
+            <div class="filter-group filter-group-amount">
+              <label for="tx-filter-min">از مبلغ (ریال)</label>
+              <input type="number" id="tx-filter-min" min="0" placeholder="۰">
+            </div>
+            <div class="filter-group filter-group-amount filter-group-amount-to">
+              <label for="tx-filter-max">تا مبلغ (ریال)</label>
+              <input type="number" id="tx-filter-max" min="0" placeholder="۰">
+            </div>
+            <div class="filter-group filter-group-action">
+              <label class="filter-action-label" aria-hidden="true">&#8203;</label>
+              <button type="button" id="tx-clear-filter" class="btn btn-ghost btn-filter">پاک کردن</button>
+            </div>
+            <div class="filter-group filter-group-action">
+              <label class="filter-action-label" aria-hidden="true">&#8203;</label>
+              <button type="button" id="tx-apply-filter" class="btn btn-primary btn-filter">اعمال فیلتر</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sort-bar sort-bar-compact">
+          <span>مرتب‌سازی:</span>
+          <div class="toggle-group" id="tx-sort-field">
+            <button type="button" class="toggle-btn active" data-value="date">تاریخ</button>
+            <button type="button" class="toggle-btn" data-value="amount">مبلغ</button>
+          </div>
+          <span>ترتیب:</span>
+          <div class="toggle-group" id="tx-sort-order">
+            <button type="button" class="toggle-btn active" data-value="desc">نزولی ↓</button>
+            <button type="button" class="toggle-btn" data-value="asc">صعودی ↑</button>
+          </div>
+        </div>
+
+        <div id="tx-list-container"></div>
+        <div id="tx-empty" class="empty-state hidden">
+          <div class="empty-state-icon">💸</div>
+          <p>تراکنشی یافت نشد</p>
+        </div>
+
+        <button type="button" id="tx-add-btn" class="tx-add-btn btn btn-primary">+ افزودن تراکنش</button>
+      </section>
+
+      <!-- Budgets -->
+      <section id="page-budgets" class="page-section hidden">
+        <div class="page-header">
+          <h1>بودجه</h1>
+          <p>تعیین و پیگیری بودجه ماهانه</p>
+        </div>
+        <div class="page-toolbar">
+          <div id="budgets-month-selector"></div>
+        </div>
+
+        <div class="stats-row" id="budget-summary-cards">
+          <div class="stat-card skeleton" style="height:100px"></div>
+          <div class="stat-card skeleton" style="height:100px"></div>
+          <div class="stat-card skeleton" style="height:100px"></div>
+        </div>
+
+        <div id="budgets-grid" class="budgets-grid"></div>
+        <div id="budgets-empty" class="empty-state hidden">
+          <div class="empty-state-icon">🎯</div>
+          <p>بودجه‌ای برای این ماه تعریف نشده</p>
+        </div>
+
+        <div class="page-actions">
+          <button type="button" id="add-budget-btn" class="btn btn-primary" style="width:auto;padding:12px 32px">+ بودجه جدید</button>
+        </div>
+      </section>
+
+      <!-- Savings -->
+      <section id="page-savings" class="page-section hidden">
+        <div class="page-header">
+          <h1>هدف پس‌انداز</h1>
+          <p>تعیین و پیگیری هدف پس‌انداز</p>
+        </div>
+        <div class="page-toolbar">
+          <div id="savings-month-selector"></div>
+        </div>
+
+        <div class="stats-row" id="savings-cards">
+          <div class="stat-card skeleton" style="height:120px"></div>
+          <div class="stat-card skeleton" style="height:120px"></div>
+          <div class="stat-card skeleton" style="height:120px"></div>
+          <div class="stat-card skeleton" style="height:120px"></div>
+        </div>
+
+        <div class="card chart-card">
+          <h3 class="chart-title">پیشرفت روزانه نسبت به هدف</h3>
+          <canvas id="savings-chart"></canvas>
+        </div>
+      </section>
+
+      <!-- Categories -->
+      <section id="page-categories" class="page-section hidden">
+        <div class="page-header">
+          <h1>مدیریت دسته‌بندی</h1>
+          <p>دسته‌بندی درآمد و هزینه‌ها</p>
+        </div>
+
+        <div id="categories-loading" class="hidden"></div>
+
+        <div class="category-section">
+          <h2 class="section-title">بخش هزینه‌ها</h2>
+          <div id="expense-categories-list" class="category-list"></div>
+        </div>
+
+        <div class="category-section">
+          <h2 class="section-title">بخش درآمدها</h2>
+          <div id="income-categories-list" class="category-list"></div>
+        </div>
+
+        <div id="categories-empty" class="empty-state hidden">
+          <div class="empty-state-icon">🏷️</div>
+          <p>دسته‌بندی‌ای وجود ندارد</p>
+        </div>
+
+        <div class="page-actions">
+          <button type="button" id="add-category-btn" class="btn btn-primary" style="width:auto;padding:12px 32px">+ دسته‌بندی جدید</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Add Account Modal -->
+  <div id="account-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>حساب جدید</h3>
+      </div>
+      <form id="account-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="account-name">نام حساب</label>
+            <input type="text" id="account-name" required placeholder="مثلاً: کیف پول اصلی">
+          </div>
+          <div class="form-group">
+            <label for="account-type">نوع حساب</label>
+            <select id="account-type"></select>
+          </div>
+          <div class="form-group">
+            <label for="account-balance">موجودی اولیه (ریال)</label>
+            <input type="number" id="account-balance" required min="0" step="1" placeholder="۰">
+          </div>
+          <div class="form-group">
+            <label for="account-currency">واحد پول</label>
+            <select id="account-currency"></select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal>انصراف</button>
+          <button type="submit" id="account-submit" class="btn btn-primary">ذخیره</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Account Modal -->
+  <div id="edit-account-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>ویرایش حساب</h3>
+      </div>
+      <form id="edit-account-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="edit-account-name">نام حساب</label>
+            <input type="text" id="edit-account-name" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-account-type">نوع حساب</label>
+            <select id="edit-account-type"></select>
+          </div>
+          <div class="form-group">
+            <label for="edit-initial-balance">موجودی اولیه (ریال)</label>
+            <input type="number" id="edit-initial-balance" required min="0" step="1" placeholder="۰">
+          </div>
+          <div class="form-group">
+            <label for="edit-account-currency">واحد پول</label>
+            <select id="edit-account-currency"></select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal>انصراف</button>
+          <button type="submit" id="edit-account-submit" class="btn btn-primary">ذخیره</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Transaction Modal -->
+  <div id="transaction-modal" class="modal-overlay hidden">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3 id="transaction-modal-title">تراکنش جدید</h3>
+      </div>
+      <form id="transaction-form" novalidate>
+        <div class="modal-body">
+          <div class="type-toggle-group" id="tx-type-toggle">
+            <button type="button" class="type-toggle active" data-type="income">درآمد</button>
+            <button type="button" class="type-toggle" data-type="expense">هزینه</button>
+            <button type="button" class="type-toggle" data-type="transfer">انتقال</button>
+          </div>
+
+          <div id="tx-fields-income-expense">
+            <div class="form-group">
+              <label for="tx-note">عنوان</label>
+              <input type="text" id="tx-note" minlength="2" placeholder="عنوان تراکنش">
+            </div>
+            <div class="form-group">
+              <label for="tx-category">دسته‌بندی</label>
+              <select id="tx-category"></select>
+              <button type="button" id="tx-add-category-inline" class="btn-link">+ افزودن دسته‌بندی جدید</button>
+            </div>
+            <div id="tx-inline-category-form" class="inline-form hidden">
+              <div class="form-group">
+                <label for="tx-inline-cat-name">نام دسته</label>
+                <input type="text" id="tx-inline-cat-name">
+              </div>
+              <div class="form-group">
+                <label>آیکون</label>
+                <div id="tx-inline-icon-picker" class="icon-picker"></div>
+                <input type="hidden" id="tx-inline-cat-icon" value="📦">
+              </div>
+              <div class="form-group">
+                <label>رنگ</label>
+                <div id="tx-inline-color-picker" class="color-picker-grid"></div>
+                <input type="hidden" id="tx-inline-cat-color" value="#3B5BDB">
+              </div>
+              <button type="button" id="tx-inline-cat-save" class="btn btn-secondary" style="width:auto">ذخیره دسته</button>
+            </div>
+            <div class="form-group">
+              <label for="tx-account">حساب</label>
+              <select id="tx-account"></select>
+            </div>
+            <div class="form-group">
+              <label for="tx-amount">مبلغ (ریال)</label>
+              <input type="number" id="tx-amount" min="1">
+            </div>
+            <div class="form-group">
+              <label>تاریخ</label>
+              <div id="tx-date-picker"></div>
+            </div>
+            <div class="form-group">
+              <label for="tx-payment">روش پرداخت (اختیاری)</label>
+              <select id="tx-payment">
+                <option value="">—</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="tx-fields-transfer" class="hidden">
+            <div class="form-group">
+              <label for="tx-transfer-note">عنوان/یادداشت (اختیاری)</label>
+              <input type="text" id="tx-transfer-note" placeholder="مثلاً: انتقال به بانک">
+            </div>
+            <div class="form-group">
+              <label for="tx-source-account">حساب مبدأ</label>
+              <select id="tx-source-account"></select>
+            </div>
+            <div class="form-group">
+              <label for="tx-target-account">حساب مقصد</label>
+              <select id="tx-target-account"></select>
+            </div>
+            <div class="form-group">
+              <label for="tx-transfer-amount">مبلغ (ریال)</label>
+              <input type="number" id="tx-transfer-amount" min="1">
+            </div>
+            <div class="form-group">
+              <label>تاریخ</label>
+              <div id="tx-transfer-date-picker"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal>انصراف</button>
+          <button type="submit" id="tx-submit" class="btn btn-primary">ذخیره</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Budget Modal -->
+  <div id="budget-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header"><h3>بودجه جدید</h3></div>
+      <form id="budget-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="budget-category">دسته‌بندی</label>
+            <select id="budget-category" required></select>
+          </div>
+          <div class="form-group">
+            <label for="budget-amount">مبلغ سقف (ریال)</label>
+            <input type="number" id="budget-amount" min="1" required>
+          </div>
+          <div class="readonly-info">
+            <span>ماه و سال</span>
+            <strong id="budget-period-label">—</strong>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal>انصراف</button>
+          <button type="submit" class="btn btn-primary">ذخیره</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Budget Modal -->
+  <div id="edit-budget-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header"><h3>ویرایش بودجه</h3></div>
+      <form id="edit-budget-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="edit-budget-category">دسته‌بندی</label>
+            <select id="edit-budget-category" required></select>
+          </div>
+          <div class="form-group">
+            <label for="edit-budget-amount">مبلغ سقف (ریال)</label>
+            <input type="number" id="edit-budget-amount" min="1" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal>انصراف</button>
+          <button type="submit" class="btn btn-primary">ذخیره</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Category Modal -->
+  <div id="category-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header"><h3>دسته‌بندی جدید</h3></div>
+      <form id="category-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="cat-name">عنوان</label>
+            <input type="text" id="cat-name" required minlength="2">
+          </div>
+          <div class="form-group">
+            <label>نوع</label>
+            <div class="toggle-group" id="cat-type-toggle">
+              <button type="button" class="toggle-btn active" data-value="expense">هزینه</button>
+              <button type="button" class="toggle-btn" data-value="income">درآمد</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>آیکون</label>
+            <div id="cat-icon-picker" class="icon-picker"></div>
+            <input type="hidden" id="cat-icon" value="📦">
+          </div>
+          <div class="form-group">
+            <label>رنگ</label>
+            <div id="cat-color-picker" class="color-picker-grid"></div>
+            <input type="hidden" id="cat-color" value="#3B5BDB">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal>انصراف</button>
+          <button type="submit" class="btn btn-primary">ذخیره</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Category Modal -->
+  <div id="edit-category-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header"><h3>ویرایش دسته‌بندی</h3></div>
+      <form id="edit-category-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="edit-cat-name">عنوان</label>
+            <input type="text" id="edit-cat-name" required minlength="2">
+          </div>
+          <div class="form-group">
+            <label>آیکون</label>
+            <div id="edit-cat-icon-picker" class="icon-picker"></div>
+            <input type="hidden" id="edit-cat-icon" value="📦">
+          </div>
+          <div class="form-group">
+            <label>رنگ</label>
+            <div id="edit-cat-color-picker" class="color-picker-grid"></div>
+            <input type="hidden" id="edit-cat-color" value="#3B5BDB">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal>انصراف</button>
+          <button type="submit" class="btn btn-primary">ذخیره</button>
+          <button type="button" id="edit-cat-delete" class="btn btn-danger" style="margin-right:auto">حذف</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Savings Goal Modal -->
+  <div id="savings-goal-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header"><h3 id="savings-goal-modal-title">تعریف هدف پس‌انداز</h3></div>
+      <form id="savings-goal-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="savings-target">مبلغ هدف (ریال)</label>
+            <input type="number" id="savings-target" min="1" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal>انصراف</button>
+          <button type="submit" class="btn btn-primary">ذخیره</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CDN Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.2.6/dist/jalaali.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- App Scripts -->
+  <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/overview.js"></script>
+  <script src="js/cashflow.js"></script>
+  <script src="js/forecast.js"></script>
+  <script src="js/accounts.js"></script>
+  <script src="js/transactions.js"></script>
+  <script src="js/budgets.js"></script>
+  <script src="js/savings.js"></script>
+  <script src="js/categories.js"></script>
+  <script src="js/router.js"></script>
+</body>
+</html>

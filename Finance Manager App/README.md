@@ -1,20 +1,23 @@
-# Personal Finance Manager (PFM)
+# چرتکه — Personal Finance Manager (PFM)
 
 ## معرفی
 
-بک‌اند RESTful برای اپ مدیریت مالی شخصی — احراز هویت، حساب‌ها، دسته‌بندی‌ها، تراکنش‌ها، بودجه، داشبورد، گزارش‌ها و پیش‌بینی مالی.
+اپلیکیشن **مدیریت مالی شخصی** با رابط کاربری فارسی (RTL) و بک‌اند RESTful.
 
-**Stack:** Node.js · Express · SQLite
+| بخش | Stack |
+|-----|-------|
+| **Frontend** | Vanilla JS · HTML · CSS · Chart.js · jalaali-js |
+| **Backend** | Node.js · Express · SQLite · JWT |
 
-**مستندات کامل API:** [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md)
+**مستندات API:** [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md)
 
 **Swagger:** `http://localhost:3465/api-docs`
 
 ---
 
-## راه‌اندازی سریع (برای فرانت‌اند)
+## راه‌اندازی سریع
 
-### ۱. اجرای بک‌اند
+### ۱. بک‌اند
 
 ```bash
 cd backend
@@ -22,9 +25,20 @@ npm install
 npm start
 ```
 
-سرور روی `http://localhost:3465` اجرا می‌شود. اگر پورت اشغال باشد، اولین پورت آزاد بعدی انتخاب می‌شود (پورت واقعی در ترمینال نمایش داده می‌شود).
+سرور روی `http://localhost:3465` اجرا می‌شود.
 
-### ۲. تنظیمات `.env`
+### ۲. فرانت‌اند
+
+```bash
+cd frontend
+npx serve . -p 5173
+```
+
+مرورگر: `http://localhost:5173`
+
+> آدرس API در `frontend/js/api.js` تنظیم شده است (`API_BASE = http://localhost:3465`).
+
+### ۳. تنظیمات `.env` (بک‌اند)
 
 ```env
 PORT=3465
@@ -34,7 +48,76 @@ JWT_EXPIRES_IN=7d
 CORS_ORIGIN=http://localhost:5173
 ```
 
-### ۳. فلو احراز هویت
+---
+
+## فرانت‌اند — چرتکه
+
+### صفحات
+
+| مسیر | صفحه | توضیح |
+|------|------|-------|
+| `#login` / `#register` | ورود / ثبت‌نام | احراز هویت JWT |
+| `#overview` | مرور کلی | کارت‌های آماری، نمودار جریان نقدی، دونات درآمد/هزینه، وضعیت بودجه |
+| `#cashflow` | جریان نقدی | نمودار هفتگی/روزانه، جدول جریان، پیش‌بینی ماه آینده |
+| `#forecast` | پیش‌بینی | کارت‌های واقعی و پیش‌بینی‌شده، نمودار هزینه و درآمد |
+| `#accounts` | حساب‌های من | CRUD حساب بانکی، نقدی، کیف پول و … |
+| `#transactions` | تراکنش‌ها | CRUD درآمد، هزینه، انتقال + فیلتر و مرتب‌سازی |
+| `#budgets` | بودجه | بودجه ماهانه per دسته + نوار پیشرفت |
+| `#savings` | هدف پس‌انداز | تعریف هدف، نمودار پیشرفت روزانه |
+| `#categories` | دسته‌بندی‌ها | CRUD دسته درآمد و هزینه |
+
+### ساختار فایل‌ها
+
+```
+frontend/
+├── index.html          ← layout، sidebar، modals، صفحات
+├── css/
+│   └── style.css       ← استایل RTL، کارت‌ها، فیلترها، نمودارها
+└── js/
+    ├── api.js          ← wrapper تمام endpointها
+    ├── utils.js        ← تاریخ شمسی، فرمت پول، toast، chart helpers
+    ├── router.js       ← hash router
+    ├── auth.js
+    ├── overview.js
+    ├── cashflow.js
+    ├── forecast.js
+    ├── accounts.js
+    ├── transactions.js
+    ├── budgets.js
+    ├── savings.js
+    └── categories.js
+```
+
+### کتابخانه‌های CDN
+
+- **jalaali-js** — تبدیل تاریخ شمسی ↔ میلادی
+- **Chart.js 4** — نمودارهای میله‌ای، خطی، دونات
+- **Vazirmatn** — فونت فارسی
+
+### قراردادهای UI
+
+| موضوع | قاعده |
+|-------|-------|
+| **مبالغ در API** | ذخیره به **ریال** |
+| **نمایش در UI** | ÷ ۱۰ → **تومان** + `Intl.NumberFormat('fa-IR')` |
+| **تاریخ در UI** | شمسی (Jalali) |
+| **تاریخ در API** | میلادی `YYYY-MM-DD` |
+| **دسته‌بندی‌ها** | همیشه نام فارسی از API |
+| **نمودارها** | tooltip فارسی، اعداد فارسی |
+
+### قابلیت‌های کلیدی فرانت
+
+- **مرور کلی:** فیلتر ماه شمسی + انتخاب چندحسابی؛ موجودی = جمع `current_balance` همه حساب‌ها؛ پس‌انداز ماه = درآمد − هزینه
+- **جریان نقدی:** خط موجودی از `initial_balance` + تراکنش‌های قبل از دوره؛ toggle هفتگی/روزانه
+- **پیش‌بینی:** هزینه از API؛ درآمد per دسته = میانگین ۳ ماه گذشته (محاسبه client-side)
+- **تراکنش‌ها:** فیلتر حساب از کارت‌های بالای صفحه؛ فیلتر نوع/دسته/تاریخ/مبلغ در grid فشرده
+- **بودجه:** محاسبه `spent` از تراکنش‌های واقعی per `category_id`
+
+---
+
+## بک‌اند — API
+
+### فلو احراز هویت
 
 ```
 POST /api/auth/register  →  ذخیره token
@@ -42,28 +125,14 @@ POST /api/auth/login     →  ذخیره token
 GET  /api/auth/me        →  با Bearer Token
 ```
 
-**Header برای همه APIهای محافظت‌شده:**
+**Header برای APIهای محافظت‌شده:**
 
 ```
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
-### ۴. فلو پیشنهادی فرانت‌اند
-
-```
-1. register/login
-2. GET /api/categories          → دسته‌بندی‌ها
-3. POST /api/accounts           → ایجاد حساب
-4. POST /api/transactions       → ثبت تراکنش
-5. GET  /api/dashboard/summary  → داشبورد
-6. GET  /api/budgets/summary    → وضعیت بودجه
-7. GET  /api/forecast/next-month→ پیش‌بینی
-```
-
----
-
-## سؤالات اصلی کاربر
+### سؤالات اصلی کاربر
 
 | سؤال | Endpoint | فیلد پاسخ |
 |------|----------|-----------|
@@ -75,11 +144,7 @@ Content-Type: application/json
 | این ماه چقدر پس‌انداز کردم؟ | `GET /api/dashboard/summary` | `data.monthly_saving` |
 | ماه آینده چقدر خرج می‌کنم؟ | `GET /api/forecast/next-month` | `data.predicted_expense` |
 
----
-
-## نقشه APIها
-
-### APIهای اصلی (با Bearer Token)
+### نقشه APIها
 
 | بخش | Base Path | توضیح |
 |-----|-----------|-------|
@@ -91,18 +156,9 @@ Content-Type: application/json
 | Dashboard | `/api/dashboard` | `/summary` · `/monthly-report` · `/category-breakdown` |
 | Reports | `/api/reports` | overview · cashflow · categories · accounts |
 | Forecast | `/api/forecast` | next-month · cashflow · categories |
+| Savings Goal | `/api/savings-goal` | تعریف هدف پس‌انداز |
 
-### APIهای Legacy (بدون auth — سازگاری)
-
-| بخش | Base Path |
-|-----|-----------|
-| Incomes | `/api/incomes` |
-| Expenses | `/api/expenses` |
-| Budgets | `/api/budgets` (بدون token) |
-| Dashboard | `/api/dashboard/balance` · `/report` |
-| Savings Goal | `/api/savings-goal` |
-
-> فرانت‌اند جدید باید از APIهای auth-based استفاده کند. جزئیات در [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md).
+> APIهای Legacy بدون auth (`/api/incomes`, `/api/expenses`) همچنان وجود دارند؛ فرانت‌اند از APIهای auth-based استفاده می‌کند.
 
 ---
 
@@ -126,6 +182,30 @@ Content-Type: application/json
 
 ---
 
+## ساختار پروژه
+
+```
+Finance Manager App/
+├── frontend/                 ← UI چرتکه (Vanilla JS)
+│   ├── index.html
+│   ├── css/style.css
+│   └── js/
+├── backend/
+│   ├── controllers/
+│   ├── services/
+│   ├── middlewares/
+│   ├── routes/
+│   ├── utils/
+│   ├── database/
+│   ├── server.js
+│   ├── swagger.js
+│   └── package.json
+├── API_DOCUMENTATION.md
+└── README.md
+```
+
+---
+
 ## راهنمای Postman
 
 ### Environment
@@ -144,7 +224,7 @@ Content-Type: application/json
 2. `POST {{baseUrl}}/api/auth/login` — `data.token` را در `token` ذخیره کنید
 3. `GET {{baseUrl}}/api/auth/me` — Authorization: Bearer `{{token}}`
 
-### فاز ۲ — Setup (با Bearer Token)
+### فاز ۲ — Setup
 
 4. `GET {{baseUrl}}/api/categories?type=expense`
 5. `POST {{baseUrl}}/api/accounts`
@@ -183,48 +263,6 @@ Content-Type: application/json
 
 ---
 
-## ساختار پروژه
-
-```
-Finance Manager App/
-├── backend/
-│   ├── controllers/
-│   │   ├── authController.js
-│   │   ├── accountsController.js
-│   │   ├── categoriesController.js
-│   │   ├── transactionsController.js
-│   │   ├── userBudgetsController.js
-│   │   ├── userDashboardController.js
-│   │   ├── reportsController.js
-│   │   ├── forecastController.js
-│   │   ├── budgetsController.js
-│   │   ├── dashboardController.js
-│   │   ├── expensesController.js
-│   │   ├── incomesController.js
-│   │   └── savingsGoalController.js
-│   ├── services/
-│   │   ├── forecastService.js
-│   │   ├── categoryService.js
-│   │   └── accountBalanceService.js
-│   ├── middlewares/
-│   │   ├── auth.js
-│   │   ├── errorHandler.js
-│   │   └── rateLimiter.js
-│   ├── routes/
-│   ├── utils/
-│   │   ├── messages.js      ← پیام‌های فارسی API
-│   │   ├── validation.js
-│   │   └── constants.js
-│   ├── database/
-│   ├── server.js
-│   ├── swagger.js
-│   └── package.json
-├── API_DOCUMENTATION.md     ← مستندات کامل برای فرانت‌اند
-└── README.md
-```
-
----
-
 ## HTTP Status Codes
 
 | کد | معنی |
@@ -255,6 +293,6 @@ Finance Manager App/
 
 ## Technologies
 
-- Node.js · Express.js · SQLite
-- JWT · bcrypt · Swagger UI
-- Helmet · CORS · Morgan
+**Frontend:** HTML5 · CSS3 · JavaScript (ES6+) · Chart.js · jalaali-js · Vazirmatn
+
+**Backend:** Node.js · Express.js · SQLite · JWT · bcrypt · Swagger UI · Helmet · CORS · Morgan

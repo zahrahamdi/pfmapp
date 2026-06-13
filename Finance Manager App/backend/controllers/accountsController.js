@@ -66,16 +66,28 @@ async function updateAccount(req, res) {
     throw createHttpError(404, MESSAGES.ACCOUNT_NOT_FOUND);
   }
 
-  const { name, type, currency } = req.body;
+  const { name, type, currency, initial_balance } = req.body;
   const validationErrors = validateAccount({ name, type, currency }, { requireBalance: false });
 
   if (validationErrors.length > 0) {
     throw createValidationError(validationErrors);
   }
 
+  let newInitialBalance = existing.initial_balance;
+  let balanceDelta = 0;
+
+  if (initial_balance !== undefined && initial_balance !== null && initial_balance !== '') {
+    const parsed = Number(initial_balance);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      throw createValidationError(['موجودی اولیه باید عدد معتبر باشد']);
+    }
+    newInitialBalance = parsed;
+    balanceDelta = parsed - existing.initial_balance;
+  }
+
   await run(
-    `UPDATE accounts SET name = ?, type = ?, currency = ?, updated_at = datetime('now') WHERE id = ?`,
-    [name.trim(), type, (currency || existing.currency).trim().toUpperCase(), req.params.id]
+    `UPDATE accounts SET name = ?, type = ?, currency = ?, initial_balance = ?, current_balance = current_balance + ?, updated_at = datetime('now') WHERE id = ?`,
+    [name.trim(), type, (currency || existing.currency).trim().toUpperCase(), newInitialBalance, balanceDelta, req.params.id]
   );
 
   const account = await get(`SELECT ${ACCOUNT_FIELDS} FROM accounts WHERE id = ?`, [req.params.id]);
