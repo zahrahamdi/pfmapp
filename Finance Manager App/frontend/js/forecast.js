@@ -77,14 +77,14 @@ function buildIncomeCategoryPredictions(transactions, categories) {
     .sort((a, b) => b.amount - a.amount);
 }
 
-function renderForecastCurrentCards(summary) {
+function renderForecastCurrentCards(overview) {
   const el = document.getElementById('forecast-cards-current');
   if (!el) return;
-  const monthlySaving = summary.monthly_saving ?? (summary.monthly_income - summary.monthly_expense);
+  const monthlySaving = overview.income.total - overview.expense.total;
   const savingClass = monthlySaving >= 0 ? 'stat-green' : 'stat-red';
   el.innerHTML = `
-    ${renderStatCard('جمع ورودی این ماه', displayAccountBalance(summary.monthly_income), 'stat-green', '💰')}
-    ${renderStatCard('جمع خروجی این ماه', displayAccountBalance(summary.monthly_expense), 'stat-red', '💸')}
+    ${renderStatCard('جمع ورودی این ماه', displayAccountBalance(overview.income.total), 'stat-green', '💰')}
+    ${renderStatCard('جمع خروجی این ماه', displayAccountBalance(overview.expense.total), 'stat-red', '💸')}
     ${renderStatCard('پس‌انداز این ماه', displayAccountBalance(monthlySaving), savingClass, '💎')}
   `;
 }
@@ -269,21 +269,22 @@ async function loadForecastPage() {
   try {
     const cur = getCurrentJalaliMonth();
     const range = getJalaliMonthRange(cur.year, cur.month);
-    const gregorian = getGregorianMonthYearFromRange(range.startDate);
+    const effectiveEnd = getEffectiveEndDate(range.startDate, range.endDate, cur.year, cur.month);
     const incomeRange = getLastCompletedMonthsRange(INCOME_FORECAST_MONTHS);
 
-    const [summary, forecast, catForecast, incomeTransactions, categories] = await Promise.all([
-      api.getDashboardSummary({ month: gregorian.month, year: gregorian.year }),
+    const [transactions, forecast, catForecast, incomeTransactions, categories] = await Promise.all([
+      api.getTransactions({ from: range.startDate, to: effectiveEnd }),
       api.getForecastNextMonthOptional(),
       api.getForecastCategoriesOptional(),
       api.getTransactions({ type: 'income', from: incomeRange.from, to: incomeRange.to }),
       api.getCategories(),
     ]);
 
+    const overview = computeOverviewStats(transactions || []);
     const incomeCategories = (categories || []).filter((c) => c.type === 'income');
     const incomePredictions = buildIncomeCategoryPredictions(incomeTransactions, incomeCategories);
 
-    renderForecastCurrentCards(summary);
+    renderForecastCurrentCards(overview);
     renderForecastPredictedCards(forecast);
     renderTrendSummary(forecast);
     renderForecastWarnings(forecast);
