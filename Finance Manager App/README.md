@@ -11,13 +11,13 @@
 
 **مستندات API:** [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md)
 
-**Swagger:** `http://localhost:3465/api-docs`
+**Swagger:** `http://localhost:3000/api-docs`
+
+**اپلیکیشن (UI + API):** `http://localhost:3000`
 
 ---
 
 ## راه‌اندازی سریع
-
-### ۱. بک‌اند
 
 ```bash
 cd backend
@@ -25,28 +25,27 @@ npm install
 npm start
 ```
 
-سرور روی `http://localhost:3465` اجرا می‌شود.
+سرور روی **`http://localhost:3000`** اجرا می‌شود و هم **API** و هم **فرانت‌اند** را سرو می‌دهد.
 
-### ۲. فرانت‌اند
+| آدرس | توضیح |
+|------|-------|
+| `http://localhost:3000` | رابط کاربری چرتکه |
+| `http://localhost:3000/api/...` | REST API |
+| `http://localhost:3000/api-docs` | Swagger |
 
-```bash
-cd frontend
-npx serve . -p 5173
-```
+> آدرس API در `frontend/js/api.js` تنظیم شده است (`BASE_URL = http://localhost:3000`).
 
-مرورگر: `http://localhost:5173`
-
-> آدرس API در `frontend/js/api.js` تنظیم شده است (`API_BASE = http://localhost:3465`).
-
-### ۳. تنظیمات `.env` (بک‌اند)
+### تنظیمات `.env` (بک‌اند)
 
 ```env
-PORT=3465
+PORT=3000
 DATABASE_PATH=database/finance.db
 JWT_SECRET=change_me
 JWT_EXPIRES_IN=7d
-CORS_ORIGIN=http://localhost:5173
+CORS_ORIGIN=http://localhost:3000
 ```
+
+> فرانت‌اند از پوشه `frontend/` به‌صورت static توسط Express سرو می‌شود (`server.js`). نیازی به `npx serve` جداگانه نیست.
 
 ---
 
@@ -212,7 +211,7 @@ Finance Manager App/
 
 | Variable | Value |
 |----------|-------|
-| `baseUrl` | `http://localhost:3465` |
+| `baseUrl` | `http://localhost:3000` |
 | `token` | خالی — بعد از login پر شود |
 
 ### فاز ۱ — Auth
@@ -295,4 +294,4 @@ Finance Manager App/
 
 **Frontend:** HTML5 · CSS3 · JavaScript (ES6+) · Chart.js · jalaali-js · Vazirmatn
 
-**Backend:** Node.js · Express.js · SQLite · JWT · bcrypt · Swagger UI · Helmet · CORS · Morgan
+**Backend:** Node.js · Express.js · SQLite · JWT · bcrypt · Swagger UI · Helmet (CSP) · CORS · Morgan

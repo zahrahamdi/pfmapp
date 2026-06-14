@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3465';
+const BASE_URL = 'http://localhost:3000';
 
 async function apiRequest(method, path, body, options = {}) {
   const { skipAuth = false, silent = false } = options;
@@ -15,7 +15,7 @@ async function apiRequest(method, path, body, options = {}) {
   }
 
   try {
-    const response = await fetch(`${API_BASE}${path}`, config);
+    const response = await fetch(`${BASE_URL}${path}`, config);
     let data = null;
 
     try {

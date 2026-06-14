@@ -64,9 +64,32 @@ function findAvailablePort(preferredPort, attemptsLeft = MAX_PORT_ATTEMPTS) {
 }
 
 app.use(cors({ origin: corsOrigin === '*' ? true : corsOrigin.split(',').map((o) => o.trim()) }));
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        'cdn.jsdelivr.net',
+        'cdnjs.cloudflare.com',
+        'fonts.googleapis.com',
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        'fonts.googleapis.com',
+      ],
+      fontSrc: ["'self'", 'fonts.gstatic.com'],
+      connectSrc: ["'self'", 'http://localhost:3000'],
+      imgSrc: ["'self'", 'data:'],
+    },
+  },
+}));
 app.use(morgan('dev'));
 app.use(express.json());
+
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
